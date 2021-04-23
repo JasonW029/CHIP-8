@@ -13,7 +13,7 @@ public class Processor {
 	
 	public short fetch(Chip8 chip8) {
 		// combine two 8-bit instructions to get a 16-bit opcode
-		short opcode = (short) ((chip8.getFromRAM(pc) << 8) & 0xff | chip8.getFromRAM(pc + 1) & 0xff);
+		short opcode = (short) ((chip8.getFromRAM(pc) << 8) & 0xffff | chip8.getFromRAM(pc + 1) & 0xff);
 		byte firstByte = chip8.getFromRAM(pc);
 		byte secondByte = chip8.getFromRAM(pc + 1);
 		pc += 2;
@@ -31,11 +31,11 @@ public class Processor {
 	}
 	
 	public String getHexString(byte b) {
-		if (b >>> 7 == 1) {
-			return Integer.toHexString(~(b - 1) & 0xff);
-		} else {
-			return Integer.toHexString(b & 0xff);
-		}
+		return Integer.toHexString(b & 0xff);
+	}
+	
+	public byte getHighestOrderBit(byte b) {
+		return (byte) ((b & 0b10000000) >>> 7);
 	}
 	
 	public void decode(Chip8 chip8, short opcode) {
@@ -49,11 +49,14 @@ public class Processor {
 		byte fourthNybble = (byte) (opcode & 0x000F);
 		printHexByte(fourthNybble);
 		
+		System.out.println("right before switch" + firstNybble);
 		switch (firstNybble) {
 			case 0x0:
 				if (secondNybble != 0x0) {
 					throw new UnsupportedOperationException("'call' not handled!");
 				} else if (fourthNybble == 0x0) {
+//					System.out.println("Stubbed");
+//					break;
 					throw new UnsupportedOperationException("'cls' not handled!");
 				} else if (fourthNybble == 0xE) {
 					throw new UnsupportedOperationException("'return' not handled!");
@@ -86,7 +89,7 @@ public class Processor {
 						V[secondNybble] = V[thirdNybble];
 						break;
 					case 0x1: // logical OR
-						V[secondNybble] = (byte) (V[secondNybble] & 0xf | V[thirdNybble] & 0xf);
+						V[secondNybble] = (byte) ((V[secondNybble] | V[thirdNybble]) & 0xff);
 						break;
 					case 0x2:  // logical AND
 						V[secondNybble] = (byte) (V[secondNybble] & 0xf & V[thirdNybble] & 0xf);
@@ -129,6 +132,7 @@ public class Processor {
 						V[0xF] = mostSigBit;
 						break;
 				}
+				break;
 			case 0x9:
 				throw new UnsupportedOperationException("'skip-neq-reg' not handled!");
 				// break;
@@ -189,4 +193,5 @@ public class Processor {
 				throw new UnsupportedOperationException("Opcode " + Integer.toHexString((opcode & 0xffff)) + " not handled!");
 		}
 	}
+	
 } // Processor
