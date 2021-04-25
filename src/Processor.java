@@ -49,14 +49,17 @@ public class Processor {
 		byte fourthNybble = (byte) (opcode & 0x000F);
 		printHexByte(fourthNybble);
 		
-		System.out.println("right before switch" + firstNybble);
+		// Note that any bitwise operation or boolean operation on bytes cause implicit widening
+		// into ints, so any bytes with a 1 in front will be carried into any inserted bits (so
+		// 0b10000000 will be cast to 0b111111111111111111111111110000000) so if we do not ignore the
+		// inserted bits, if we cast into anything bigger than a byte (e.g. a short), we will have a 
+		// wrong value (since in reality, those 1s should really be 0s). Thus, to recast into a 
+		// short (or larger) we have to only retrieve the lowest n bits (AND with 0x(n * 'f')).
 		switch (firstNybble) {
 			case 0x0:
 				if (secondNybble != 0x0) {
 					throw new UnsupportedOperationException("'call' not handled!");
 				} else if (fourthNybble == 0x0) {
-//					System.out.println("Stubbed");
-//					break;
 					throw new UnsupportedOperationException("'cls' not handled!");
 				} else if (fourthNybble == 0xE) {
 					throw new UnsupportedOperationException("'return' not handled!");
@@ -84,18 +87,21 @@ public class Processor {
 				throw new UnsupportedOperationException("'add-num-nocarry' not handled!");
 				// break;
 			case 0x8:  // arithmetic opcodes
+				// note that any boolean operations implicit widen the bytes into ints, but when casting
+				// back into a byte, all but the lowest 8 bits are discarded so the outcome still results
+			    // in expected behaviour
 				switch (fourthNybble) {
 					case 0x0: // set
 						V[secondNybble] = V[thirdNybble];
 						break;
 					case 0x1: // logical OR
-						V[secondNybble] = (byte) ((V[secondNybble] | V[thirdNybble]) & 0xff);
+						V[secondNybble] = (byte) (V[secondNybble] | V[thirdNybble]);
 						break;
 					case 0x2:  // logical AND
-						V[secondNybble] = (byte) (V[secondNybble] & 0xf & V[thirdNybble] & 0xf);
+						V[secondNybble] = (byte) ((V[secondNybble] & V[thirdNybble]) & 0xff);
 						break;
 					case 0x3:  // logical XOR
-						V[secondNybble] = (byte) (V[secondNybble] & 0xf ^ V[thirdNybble] & 0xf);
+						V[secondNybble] = (byte) ((V[secondNybble] ^ V[thirdNybble])) & 0xff;
 						break;
 					case 0x4:  // add w/ carry
 						V[0xF] = 0;
