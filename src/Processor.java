@@ -37,6 +37,17 @@ public class Processor {
 	public byte getHighestOrderBit(byte b) {
 		return (byte) ((b & 0b10000000) >>> 7);
 	}
+
+	public byte bitshiftRight(byte b) {
+		int shifted_b = b >>> 1;
+		// the leading sign bit may not be accurate due to int widening, so we will force it to be 0
+		return (byte) (shifted_b & 0b01111111);
+	}
+
+	public byte bitshiftLeft(byte b) {
+		int shifted_b = b << 1;
+		return (byte) (shifted_b);
+	}
 	
 	public void decode(Chip8 chip8, short opcode) {
 		printHexShort(opcode);
@@ -121,7 +132,7 @@ public class Processor {
 						break;
 					case 0x6:  // bit-shift right by 1
 						byte leastSigBit = (byte) (V[secondNybble] & 0x1);
-						V[secondNybble] = (byte) (V[secondNybble] >>> 1);
+						V[secondNybble] = bitshiftRight(V[secondNybble]);
 						V[0xF] = leastSigBit;
 						break;
 					case 0x7:  // reverse subtract w/ underflow
@@ -133,8 +144,8 @@ public class Processor {
 						V[secondNybble] = (byte) differenceReverse;
 						break;
 					case 0xE:  // bit-shift left by 1
-						byte mostSigBit = (byte) ((V[secondNybble] & 0b10000000) >>> 7);
-						V[secondNybble] = (byte) (V[secondNybble] << 1);
+						byte mostSigBit = (byte) ((V[secondNybble] >>> 7) & 0x1);
+						V[secondNybble] = bitshiftLeft(V[secondNybble]);
 						V[0xF] = mostSigBit;
 						break;
 				}
