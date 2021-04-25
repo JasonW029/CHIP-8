@@ -21,12 +21,16 @@ public class Display extends JPanel {
         this.scale = scale;
         this.screen = screen;
 
+        this.setPreferredSize(new Dimension(64 * this.scale, 32 * this.scale));
+//        this.setSize(64 * this.scale, 32 * this.scale);
+
         JFrame frame = new JFrame("Test");
         frame.add(this);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(64 * this.scale, 32 * this.scale);
+//        frame.setSize(64 * this.scale, 32 * this.scale);
+        frame.pack();
         frame.setVisible(true);
-//        frame.setResizable(false);
+        frame.setResizable(false);
     }
 
     public void paintComponent(Graphics g) {
@@ -36,7 +40,7 @@ public class Display extends JPanel {
         for (int i = 0; i < this.screen.length; i++) {
             for (int j = 0; j < this.screen[i].length; j++) {
                 if (this.screen[i][j]) {
-                    g.drawRect(i * (this.scale - 1), j * (this.scale - 1), (this.scale - 1), (this.scale - 1));
+                    g.drawRect(i * this.scale, j * this.scale, this.scale, this.scale);
                 }
             }
         }
