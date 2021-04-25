@@ -36,7 +36,7 @@ public class Display extends JPanel {
         for (int i = 0; i < this.screen.length; i++) {
             for (int j = 0; j < this.screen[i].length; j++) {
                 if (this.screen[i][j]) {
-                    g.drawRect(i * this.scale, j * this.scale, this.scale, this.scale);
+                    g.drawRect(i * (this.scale - 1), j * (this.scale - 1), (this.scale - 1), (this.scale - 1));
                 }
             }
         }
