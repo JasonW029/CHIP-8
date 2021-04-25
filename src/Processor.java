@@ -98,14 +98,14 @@ public class Processor {
 						V[secondNybble] = (byte) (V[secondNybble] | V[thirdNybble]);
 						break;
 					case 0x2:  // logical AND
-						V[secondNybble] = (byte) ((V[secondNybble] & V[thirdNybble]) & 0xff);
+						V[secondNybble] = (byte) (V[secondNybble] & V[thirdNybble]);
 						break;
 					case 0x3:  // logical XOR
-						V[secondNybble] = (byte) ((V[secondNybble] ^ V[thirdNybble])) & 0xff;
+						V[secondNybble] = (byte) (V[secondNybble] ^ V[thirdNybble]);
 						break;
 					case 0x4:  // add w/ carry
 						V[0xF] = 0;
-						int sum = (V[secondNybble] & 0xf + V[thirdNybble] & 0xf);
+						int sum = ((V[secondNybble] & 0xff) + (V[thirdNybble] & 0xff));
 						V[secondNybble] = (byte) sum;
 						if (sum > 255) {  // invoke carry flag
 							V[0xF] = 1;
@@ -113,10 +113,10 @@ public class Processor {
 						break;
 					case 0x5:  // subtract w/ underflow
 						V[0xF] = 0;
-						if ((V[secondNybble] & 0xf) > (V[thirdNybble] & 0xf)) {  // invoke carry flag
+						if ((V[secondNybble] & 0xff) > (V[thirdNybble] & 0xff)) {  // invoke carry flag
 							V[0xF] = 1;
 						}
-						int difference = (V[secondNybble] & 0xf - V[thirdNybble] & 0xf);
+						int difference = ((V[secondNybble] & 0xff) - (V[thirdNybble] & 0xff));
 						V[secondNybble] = (byte) difference;
 						break;
 					case 0x6:  // bit-shift right by 1
@@ -126,10 +126,10 @@ public class Processor {
 						break;
 					case 0x7:  // reverse subtract w/ underflow
 						V[0xF] = 0;
-						if ((V[thirdNybble] & 0xf) > (V[secondNybble] & 0xf)) {  // invoke carry flag
+						if ((V[thirdNybble] & 0xff) > (V[secondNybble] & 0xff)) {  // invoke carry flag
 							V[0xF] = 1;
 						}
-						int differenceReverse = (V[thirdNybble] & 0xf - V[secondNybble] & 0xf);
+						int differenceReverse = ((V[thirdNybble] & 0xff) - (V[secondNybble] & 0xff));
 						V[secondNybble] = (byte) differenceReverse;
 						break;
 					case 0xE:  // bit-shift left by 1

@@ -5,7 +5,7 @@ import java.nio.file.Files;
 
 public class Chip8 {
 	
-	byte[] RAM = new byte[0x1000];
+	byte[] RAM = new byte[0x1000];  // CHIP-8 has 4096 bytes of RAM
 	Processor cpu = new Processor();
 	boolean[][] display = new boolean[64][32];
 	
