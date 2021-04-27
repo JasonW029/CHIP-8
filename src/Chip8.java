@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.io.File;
 import java.util.Stack;
 import java.io.IOException;
@@ -7,7 +8,7 @@ public class Chip8 {
 	
 	byte[] RAM = new byte[0x1000];  // CHIP-8 has 4096 bytes of RAM
 	Processor cpu = new Processor();
-	boolean[][] display = new boolean[64][32];
+	Display display = new Display(10);
 	
 	byte[] fonts = new byte[]
     {
@@ -29,8 +30,8 @@ public class Chip8 {
     	(byte) 0xF0, (byte) 0x80, (byte) 0xF0, (byte) 0x80, (byte) 0x80  // F
 	};
 	
-	public Chip8() {
-		initialize();
+	public Chip8(int scale) {
+		initialize(scale);
 		setupFonts();
 		try {
 			loadProgram("Chip-8 Files/IBM Logo.ch8");
@@ -39,10 +40,12 @@ public class Chip8 {
 		}
 	}
 	
-	private void initialize() {
+	private void initialize(int scale) {
 		cpu.pc = 0x200;  // programs start at RAM addr 0x200
 		cpu.indexReg = 0;
 		cpu.stack = new Stack<>();
+		// initialize display on the EDT
+		SwingUtilities.invokeLater( () -> display = new Display(scale) );
 	}
 	
 	private void setupFonts() {

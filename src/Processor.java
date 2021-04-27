@@ -1,4 +1,5 @@
 
+import javax.swing.*;
 import java.util.Stack;
 
 public class Processor {
@@ -81,8 +82,9 @@ public class Processor {
 			case 0x0:
 				if (secondNybble != 0x0) {
 					throw new UnsupportedOperationException("'call' not handled!");
-				} else if (fourthNybble == 0x0) {
-					throw new UnsupportedOperationException("'cls' not handled!");
+				} else if (fourthNybble == 0x0) {  // cls
+					// request EDT to clear screen - may not happen instantly
+					SwingUtilities.invokeLater(() -> chip8.display.clearScreen());
 				} else if (fourthNybble == 0xE) {
 					throw new UnsupportedOperationException("'return' not handled!");
 				}

@@ -11,18 +11,24 @@ public class Display extends JPanel {
     boolean[][] screen;
 
     public static void main(String[] args) {
+        Display display = new Display(10);
         boolean[][] screenCtx = new boolean[64][32];
         for (boolean[] row : screenCtx) {
             Arrays.fill(row, true);
         }
-        Display display = new Display(10, screenCtx);
+        display.screen = screenCtx;
         // display implicitly calls paintComponent
-        display.resetScreen();
+        display.updateScreen();
     }
 
 
-    public Display(int scale, boolean[][] screen) {
+    public Display(int scale) {
         this.scale = scale;
+
+        boolean[][] screen = new boolean[64][32];
+        for (boolean[] row : screen) {
+            Arrays.fill(row, false);
+        }
         this.screen = screen;
 
         this.setPreferredSize(new Dimension(64 * this.scale, 32 * this.scale));
@@ -39,19 +45,20 @@ public class Display extends JPanel {
 
     public void flipPixel(int x, int y) {
         this.screen[x][y] = !this.screen[x][y];
-        resetScreen();
+        updateScreen();
     }
 
-    public void resetScreen() {
-        // g.clearRect(64 * this.scale, 32 * this.scale, 64 * this.scale, 32 * this.scale);
-        this.removeAll();
-
-        boolean[][] screenCtx = new boolean[64][32];
-        for (boolean[] row : screenCtx) {
+    public void clearScreen() {
+        boolean[][] screen = new boolean[64][32];
+        for (boolean[] row : screen) {
             Arrays.fill(row, false);
         }
+        this.screen = screen;
+        updateScreen();
+    }
 
-        this.screen = screenCtx;
+    public void updateScreen() {
+        this.removeAll();
 
         this.revalidate();
         this.repaint();
