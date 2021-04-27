@@ -1,5 +1,5 @@
 import java.io.File;
-
+import java.util.Stack;
 import java.io.IOException;
 import java.nio.file.Files;
 
@@ -42,7 +42,7 @@ public class Chip8 {
 	private void initialize() {
 		cpu.pc = 0x200;  // programs start at RAM addr 0x200
 		cpu.indexReg = 0;
-		cpu.stack = new short[16];
+		cpu.stack = new Stack<>();
 	}
 	
 	private void setupFonts() {

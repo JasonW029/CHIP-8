@@ -1,10 +1,12 @@
 
+import java.util.Stack;
+
 public class Processor {
 	
 	byte[] V = new byte[16];  // var registers 0 thru F
 	short indexReg;  // points at locations in RAM
 	short pc;  // program counter (points at current instruction)
-	short[] stack;  // 16-item deep stack
+	Stack<Short> stack; // 16-item deep stack
 	byte delayTimer;
 	byte soundTimer;
 	
@@ -66,6 +68,15 @@ public class Processor {
 		// inserted bits, if we cast into anything bigger than a byte (e.g. a short), we will have a 
 		// wrong value (since in reality, those 1s should really be 0s). Thus, to recast into a 
 		// short (or larger) we have to only retrieve the lowest n bits (AND with 0x(n * 'f')).
+
+		// IBM Logo Required Opcodes:
+		// 00E0 cls
+		// 1NNN jump
+		// 6XNN set
+		// 7XNN add
+		// ANNN set I
+		// DXYN display
+
 		switch (firstNybble) {
 			case 0x0:
 				if (secondNybble != 0x0) {
