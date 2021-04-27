@@ -33,8 +33,13 @@ public class Display extends JPanel {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        frame.setSize(64 * this.scale, 32 * this.scale);
         frame.pack();
-        frame.setVisible(true);
         frame.setResizable(false);
+        frame.setVisible(true);
+    }
+
+    public void flipPixel(int x, int y) {
+        this.screen[x][y] = !this.screen[x][y];
+        resetScreen();
     }
 
     public void resetScreen() {
@@ -59,7 +64,8 @@ public class Display extends JPanel {
 //        g.drawRect(0, 0, 200, 200);
         for (int i = 0; i < this.screen.length; i++) {
             for (int j = 0; j < this.screen[i].length; j++) {
-                if (!this.screen[i][j]) {
+                boolean pixelOn = this.screen[i][j];
+                if (!pixelOn) {
                     // g.drawRect(i * this.scale, j * this.scale, this.scale, this.scale);
                     g.fillRect(i * this.scale, j * this.scale, this.scale, this.scale);
                 }
