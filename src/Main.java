@@ -1,8 +1,9 @@
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 public class Main {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException, InvocationTargetException {
 		Chip8 chip8 = new Chip8(10);
 		System.out.println(Arrays.toString(chip8.RAM));
 		for (int i = 0x200; i < chip8.RAM.length; i++) {

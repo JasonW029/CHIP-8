@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Stack;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,7 +31,7 @@ public class Chip8 {
     	(byte) 0xF0, (byte) 0x80, (byte) 0xF0, (byte) 0x80, (byte) 0x80  // F
 	};
 	
-	public Chip8(int scale) {
+	public Chip8(int scale) throws InterruptedException, InvocationTargetException {
 		initialize(scale);
 		setupFonts();
 		try {
@@ -40,12 +41,12 @@ public class Chip8 {
 		}
 	}
 	
-	private void initialize(int scale) {
+	private void initialize(int scale) throws InterruptedException, InvocationTargetException {
 		cpu.pc = 0x200;  // programs start at RAM addr 0x200
 		cpu.indexReg = 0;
 		cpu.stack = new Stack<>();
 		// initialize display on the EDT
-		SwingUtilities.invokeLater( () -> display = new Display(scale) );
+		SwingUtilities.invokeAndWait( () -> display = new Display(scale) );
 	}
 	
 	private void setupFonts() {
