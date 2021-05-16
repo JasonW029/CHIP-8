@@ -109,7 +109,7 @@ public class Processor {
 			case 0x5:
 				throw new UnsupportedOperationException("'skip-eq-reg' not handled!");
 				// break;
-			case 0x6: // set-num
+			case 0x6: // set-register-to-num
 				chip8.cpu.V[secondNybble] = (byte) (((thirdNybble << 4) & 0xf0) | (fourthNybble & 0x0f));
 				break;
 			case 0x7: { // add-num-nocarry
@@ -175,7 +175,7 @@ public class Processor {
 			case 0x9:
 				throw new UnsupportedOperationException("'skip-neq-reg' not handled!");
 				// break;
-			case 0xA: // set-index
+			case 0xA: // set-index-register
 				chip8.cpu.indexReg = (short) (((secondNybble << 8) & 0xf00) |
 						((thirdNybble << 4) & 0x0f0) | (fourthNybble & 0x00f));
 				break;
