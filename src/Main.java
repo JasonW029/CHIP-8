@@ -9,16 +9,27 @@ public class Main {
 		for (int i = 0x200; i < chip8.RAM.length; i++) {
 			System.out.print(Integer.toHexString(chip8.RAM[i] & 0xFF) + ", ");
 		}
-		System.out.println();
-		chip8.cpu.V[0] = (byte) 0b10000000;
-		chip8.cpu.V[1] = (byte) 0b00000111;
-		System.out.println(chip8.cpu.V[0]);
-		System.out.println(chip8.cpu.V[1]);
-		short opcode = (short)0x8011;
-//		short opcode = chip8.cpu.fetch(chip8);
-		chip8.cpu.decode(chip8, opcode);
-		System.out.println(chip8.cpu.V[0]);
-		System.out.println(chip8.cpu.V[1]);
+//		System.out.println();
+//		chip8.cpu.V[0] = (byte) 0b10000000;
+//		chip8.cpu.V[1] = (byte) 0b00000111;
+//		System.out.println(chip8.cpu.V[0]);
+//		System.out.println(chip8.cpu.V[1]);
+//		short opcode = (short)0x8011;
+////		short opcode = chip8.cpu.fetch(chip8);
+//		chip8.cpu.decode(chip8, opcode);
+//		System.out.println(chip8.cpu.V[0]);
+//		System.out.println(chip8.cpu.V[1]);
+//		while (true) {
+//			short opcode = chip8.cpu.fetch(chip8);
+//			chip8.cpu.decode(chip8, opcode);
+//		}
+		for (int i = 0; i < 8; ++i) {
+			short opcode = chip8.cpu.fetch(chip8);
+			chip8.cpu.decode(chip8, opcode);
+			System.out.println("V0: " + chip8.cpu.getHexString(chip8.cpu.V[0x0]));
+			System.out.println("V1: " + chip8.cpu.getHexString(chip8.cpu.V[0x1]));
+			System.out.println("Index Reg: " + chip8.cpu.getHexString(chip8.cpu.indexReg));
+		}
 	}
 	
 

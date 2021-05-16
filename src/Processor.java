@@ -36,6 +36,10 @@ public class Processor {
 	public String getHexString(byte b) {
 		return Integer.toHexString(b & 0xff);
 	}
+
+	public String getHexString(short s) {
+		return Integer.toHexString(s & 0xffff);
+	}
 	
 	public byte getHighestOrderBit(byte b) {
 		return (byte) ((b & 0b10000000) >>> 7);
@@ -54,6 +58,7 @@ public class Processor {
 	
 	public void decode(Chip8 chip8, short opcode) {
 		printHexShort(opcode);
+		// note: nthNybble variables are always unsigned because they only take up 4 bits (not 8)
 		byte firstNybble = (byte) ((opcode & 0xF000) >>> 12);
 		printHexByte(firstNybble);
 		byte secondNybble = (byte) ((opcode & 0x0F00) >>> 8);
@@ -104,12 +109,16 @@ public class Processor {
 			case 0x5:
 				throw new UnsupportedOperationException("'skip-eq-reg' not handled!");
 				// break;
-			case 0x6:
-				throw new UnsupportedOperationException("'set-num' not handled!");
-				// break;
-			case 0x7:
-				throw new UnsupportedOperationException("'add-num-nocarry' not handled!");
-				// break;
+			case 0x6: // set-num
+				chip8.cpu.V[secondNybble] = (byte) (((thirdNybble << 4) & 0xf0) | (fourthNybble & 0x0f));
+				break;
+			case 0x7: { // add-num-nocarry
+				int sum = (chip8.cpu.V[secondNybble] & 0xff) + (((thirdNybble << 4) & 0xf0) | (fourthNybble & 0x0f));
+				// note: if sum overflows out of a byte, we do not care about the carry bit
+				// the shortening from int to byte may lose info, but this opcode behaves this way
+				chip8.cpu.V[secondNybble] = (byte) sum;
+				break;
+			}
 			case 0x8:  // arithmetic opcodes
 				// note that any boolean operations implicit widen the bytes into ints, but when casting
 				// back into a byte, all but the lowest 8 bits are discarded so the outcome still results
@@ -166,18 +175,30 @@ public class Processor {
 			case 0x9:
 				throw new UnsupportedOperationException("'skip-neq-reg' not handled!");
 				// break;
-			case 0xA:
-				throw new UnsupportedOperationException("'set-index' not handled!");
-				// break;
+			case 0xA: // set-index
+				chip8.cpu.indexReg = (short) (((secondNybble << 8) & 0xf00) |
+						((thirdNybble << 4) & 0x0f0) | (fourthNybble & 0x00f));
+				break;
 			case 0xB:
 				throw new UnsupportedOperationException("'jump + offset of V0' not handled!");
 				// break;
 			case 0xC:
 				throw new UnsupportedOperationException("'bitwise-and-random' not handled!");
 				// break;
-			case 0xD:
-				throw new UnsupportedOperationException("'draw-sprite' not handled!");
-				// break;
+			case 0xD: // draw-sprite
+				chip8.cpu.V[0xF] = 0;
+				int x = (V[secondNybble] & 0xff) % chip8.display.SCREEN_WIDTH; // x-coord's start position wraps
+				int y = (V[thirdNybble] & 0xff) % chip8.display.SCREEN_HEIGHT; // y-coord's start position wraps
+				int spriteHeight = fourthNybble & 0xff;
+
+				byte[] spriteList = new byte[spriteHeight]; // holds all sprite to be written in row order
+				// fill spriteList with sprite data
+				for (int i = 0; i < spriteHeight; ++i) {
+					spriteList[i] = chip8.RAM[indexReg + i];
+				}
+				// draw sprite to display
+				V[0xF] = (byte) (chip8.display.drawSprite(spriteList, x, y, spriteHeight) ? 1 : 0);
+				break;
 			case 0xE:
 				if (thirdNybble == 0x9) {
 					throw new UnsupportedOperationException("'skip-key-pressed' not handled!");

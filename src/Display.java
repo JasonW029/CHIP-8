@@ -9,10 +9,14 @@ public class Display extends JPanel {
 
     int scale;
     boolean[][] screen;
+    final int SCREEN_WIDTH = 64;
+    final int SCREEN_HEIGHT = 32;
+    final int SPRITE_WIDTH = 8;
+
 
     public static void main(String[] args) {
         Display display = new Display(10);
-        boolean[][] screenCtx = new boolean[64][32];
+        boolean[][] screenCtx = new boolean[display.SCREEN_WIDTH][display.SCREEN_HEIGHT];
         for (boolean[] row : screenCtx) {
             Arrays.fill(row, true);
         }
@@ -42,6 +46,35 @@ public class Display extends JPanel {
         frame.setResizable(false);
         frame.setVisible(true);
     }
+
+    /**
+     * Draw an 8xspriteHeight large sprite starting at the specified x and y coordinates.
+     * @return Return whether any pixels were turned off.
+     */
+    public boolean drawSprite(byte[] spriteList, int x, int y, int spriteHeight) {
+        boolean anyPixelsTurnedOff = false;
+
+        for (int curr_col = 0; curr_col < SPRITE_WIDTH; ++curr_col) {
+            // if sprite writes off-screen, do not wrap around - simply cut off the sprite
+            if (x + curr_col > SCREEN_WIDTH) {
+                break;
+            }
+           for (int curr_row = 0; curr_row < spriteHeight; ++curr_row) {
+               // if sprite writes off-screen, do not wrap around - simply cut off the sprite
+               if (y + curr_row > SCREEN_HEIGHT) {
+                   break;
+               }
+               boolean spritePixel = ((spriteList[curr_row] >>> curr_col) & 0b1) == 0b1;
+               // if spritePixel is 1 and the screen pixel is on, the screen pixel turns off
+               if (screen[x + curr_col][y + curr_row] && spritePixel) {
+                   anyPixelsTurnedOff = true;
+               }
+               screen[x + curr_col][y + curr_row] ^= spritePixel;
+           }
+        }
+        updateScreen();
+        return anyPixelsTurnedOff;
+    } // drawSprite()
 
     public void flipPixel(int x, int y) {
         this.screen[x][y] = !this.screen[x][y];
