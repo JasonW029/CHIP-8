@@ -64,7 +64,7 @@ public class Display extends JPanel {
                if (y + curr_row > SCREEN_HEIGHT) {
                    break;
                }
-               boolean spritePixel = ((spriteList[curr_row] >>> curr_col) & 0b1) == 0b1;
+               boolean spritePixel = ((spriteList[curr_row] >>> (SPRITE_WIDTH - curr_col - 1)) & 0b1) == 0b1;
                // if spritePixel is 1 and the screen pixel is on, the screen pixel turns off
                if (screen[x + curr_col][y + curr_row] && spritePixel) {
                    anyPixelsTurnedOff = true;
