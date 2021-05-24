@@ -54,6 +54,7 @@ public class Display extends JPanel {
     public boolean drawSprite(byte[] spriteList, int x, int y, int spriteHeight) {
         boolean anyPixelsTurnedOff = false;
 
+        // draw columns from left to right
         for (int curr_col = 0; curr_col < SPRITE_WIDTH; ++curr_col) {
             // if sprite writes off-screen, do not wrap around - simply cut off the sprite
             if (x + curr_col > SCREEN_WIDTH) {
@@ -66,7 +67,7 @@ public class Display extends JPanel {
                }
                boolean spritePixel = ((spriteList[curr_row] >>> (SPRITE_WIDTH - curr_col - 1)) & 0b1) == 0b1;
                // if spritePixel is 1 and the screen pixel is on, the screen pixel turns off
-               if (screen[x + curr_col][y + curr_row] && spritePixel) {
+               if (!anyPixelsTurnedOff && screen[x + curr_col][y + curr_row] && spritePixel) {
                    anyPixelsTurnedOff = true;
                }
                screen[x + curr_col][y + curr_row] ^= spritePixel;
