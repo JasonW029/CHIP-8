@@ -1,10 +1,26 @@
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 public class Main {
 
-	public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-		Chip8 chip8 = new Chip8(10);
+	@SuppressWarnings("InfiniteLoopStatement")
+	public static void main(String[] args) throws Exception {
+		Chip8 chip8;
+		try {
+			chip8 = new Chip8(10);
+		} catch (InterruptedException | InvocationTargetException e) {
+			e.printStackTrace();
+			throw new Exception("Couldn't initialize CHIP-8.");
+		}
+
+		try {
+			chip8.loadProgram("Chip-8 Files/IBM Logo.ch8");
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new Exception("The specified file cannot be found.");
+		}
+
 		System.out.println(Arrays.toString(chip8.RAM));
 		for (int i = 0x200; i < chip8.RAM.length; i++) {
 			System.out.print(Integer.toHexString(chip8.RAM[i] & 0xFF) + ", ");
@@ -19,17 +35,19 @@ public class Main {
 //		chip8.cpu.decode(chip8, opcode);
 //		System.out.println(chip8.cpu.V[0]);
 //		System.out.println(chip8.cpu.V[1]);
-//		while (true) {
-//			short opcode = chip8.cpu.fetch(chip8);
-//			chip8.cpu.decode(chip8, opcode);
-//		}
-		for (int i = 0; i < 8; ++i) {
+
+		while (true) {
 			short opcode = chip8.cpu.fetch(chip8);
 			chip8.cpu.decode(chip8, opcode);
-			System.out.println("V0: " + chip8.cpu.getHexString(chip8.cpu.V[0x0]));
-			System.out.println("V1: " + chip8.cpu.getHexString(chip8.cpu.V[0x1]));
-			System.out.println("Index Reg: " + chip8.cpu.getHexString(chip8.cpu.indexReg));
 		}
+
+//		for (int i = 0; i < 8; ++i) {
+//			short opcode = chip8.cpu.fetch(chip8);
+//			chip8.cpu.decode(chip8, opcode);
+//			System.out.println("V0: " + chip8.cpu.getHexString(chip8.cpu.V[0x0]));
+//			System.out.println("V1: " + chip8.cpu.getHexString(chip8.cpu.V[0x1]));
+//			System.out.println("Index Reg: " + chip8.cpu.getHexString(chip8.cpu.indexReg));
+//		}
 	}
 	
 
