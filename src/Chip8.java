@@ -34,11 +34,6 @@ public class Chip8 {
 	public Chip8(int scale) throws InterruptedException, InvocationTargetException {
 		initialize(scale);
 		setupFonts();
-		try {
-			loadProgram("Chip-8 Files/IBM Logo.ch8");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 	
 	private void initialize(int scale) throws InterruptedException, InvocationTargetException {
