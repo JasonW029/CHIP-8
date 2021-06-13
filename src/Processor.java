@@ -1,5 +1,6 @@
 
 import javax.swing.*;
+import java.util.Random;
 import java.util.Stack;
 
 public class Processor {
@@ -10,6 +11,7 @@ public class Processor {
 	Stack<Short> stack; // 16-item deep stack
 	byte delayTimer;
 	byte soundTimer;
+	Random rand = new Random();
 	
 	public Processor() {
 	}
@@ -86,29 +88,41 @@ public class Processor {
 		switch (firstNybble) {
 			case 0x0:
 				if (secondNybble != 0x0) {
-					throw new UnsupportedOperationException("'call' not handled!");
+					// should call a subroutine on original cpu, we don't need to handle this - simply
+					// ignore and continue
+					assert true;
 				} else if (fourthNybble == 0x0) {  // cls
 					// request EDT to clear screen - may not happen instantly
 					SwingUtilities.invokeLater(() -> chip8.display.clearScreen());
 				} else if (fourthNybble == 0xE) {
-					throw new UnsupportedOperationException("'return' not handled!");
+					// return from subroutine
+					chip8.cpu.pc = chip8.cpu.stack.pop();
 				}
 				break;
-			case 0x1:
-				throw new UnsupportedOperationException("'jump' not handled!");
-				// break;
-			case 0x2:
-				throw new UnsupportedOperationException("'call' not handled!");
-				// break;
-			case 0x3:
-				throw new UnsupportedOperationException("'skip-eq-num' not handled!");
-				// break;
-			case 0x4:
-				throw new UnsupportedOperationException("'skip-neq-num' not handled!");
-				// break;
-			case 0x5:
-				throw new UnsupportedOperationException("'skip-eq-reg' not handled!");
-				// break;
+			case 0x1: // jump
+				chip8.cpu.pc = (short) (((secondNybble << 8) & 0xf00) | ((thirdNybble << 4) & 0x0f0) |
+										fourthNybble & 0x00f);
+				break;
+			case 0x2: // call subroutine
+				chip8.cpu.stack.push(chip8.cpu.pc);
+				chip8.cpu.pc = (short) (((secondNybble << 8) & 0xf00) | ((thirdNybble << 4) & 0x0f0) |
+						fourthNybble & 0x00f);
+				break;
+			case 0x3: // skip next instruction if VX == NN
+				if (V[secondNybble] == (short) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
+					chip8.cpu.pc += 2;
+				}
+				break;
+			case 0x4: // skip next instruction if VX != NN
+				if (V[secondNybble] != (short) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
+					chip8.cpu.pc += 2;
+				}
+				break;
+			case 0x5: // skip next instruction if VX == VY
+				if (V[secondNybble] == V[thirdNybble]) {
+					chip8.cpu.pc += 2;
+				}
+				break;
 			case 0x6: // set-register-to-num
 				chip8.cpu.V[secondNybble] = (byte) (((thirdNybble << 4) & 0xf0) | (fourthNybble & 0x0f));
 				break;
@@ -153,6 +167,9 @@ public class Processor {
 						V[secondNybble] = (byte) difference;
 						break;
 					case 0x6:  // bit-shift right by 1
+						if (!chip8.usingModernImpl) {
+							V[secondNybble] = V[thirdNybble];
+						}
 						byte leastSigBit = (byte) (V[secondNybble] & 0x1);
 						V[secondNybble] = bitshiftRight(V[secondNybble]);
 						V[0xF] = leastSigBit;
@@ -172,19 +189,27 @@ public class Processor {
 						break;
 				}
 				break;
-			case 0x9:
-				throw new UnsupportedOperationException("'skip-neq-reg' not handled!");
-				// break;
+			case 0x9: // skip next instruction if VX != VY
+				if (V[secondNybble] != V[thirdNybble]) {
+					chip8.cpu.pc += 2;
+				}
+				break;
 			case 0xA: // set-index-register
 				chip8.cpu.indexReg = (short) (((secondNybble << 8) & 0xf00) |
 						((thirdNybble << 4) & 0x0f0) | (fourthNybble & 0x00f));
 				break;
-			case 0xB:
-				throw new UnsupportedOperationException("'jump + offset of V0' not handled!");
-				// break;
-			case 0xC:
-				throw new UnsupportedOperationException("'bitwise-and-random' not handled!");
-				// break;
+			case 0xB: // jump with register offset
+				int base_addr = (((secondNybble << 8) & 0xf00) | ((thirdNybble << 4) & 0x0f0) | fourthNybble & 0x00f);
+				if (chip8.usingModernImpl) {
+					chip8.cpu.pc = (short) ((int)V[secondNybble] + base_addr);
+				} else {
+					chip8.cpu.pc = (short) ((int)V[0] + base_addr);
+				}
+				break;
+			case 0xC: // generate randnum, then set VX to randnum AND NN
+				int rand_num = rand.nextInt(255);
+				chip8.cpu.V[secondNybble] = (byte) (rand_num & ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f)));
+				break;
 			case 0xD: // draw-sprite
 				chip8.cpu.V[0xF] = 0;
 				int x = (V[secondNybble] & 0xff) % chip8.display.SCREEN_WIDTH; // x-coord's start position wraps
@@ -230,9 +255,15 @@ public class Processor {
 				} else if (thirdNybble == 0x2) {
 					throw new UnsupportedOperationException("'set-index-sprite' not handled!");
 					// break;
-				} else if (thirdNybble == 0x3) {
-					throw new UnsupportedOperationException("'binary-coded-decimal' not handled!");
-					// break;
+				} else if (thirdNybble == 0x3) { // load BCD into memory
+					int num = V[secondNybble] & 0xff;
+					byte hundreds_digit = (byte) (num / 100);
+					byte tens_digit = (byte) ((num / 10) % 10);
+					byte ones_digit = (byte) (num % 10);
+					chip8.setRAM(indexReg, hundreds_digit);
+					chip8.setRAM(indexReg + 1, tens_digit);
+					chip8.setRAM(indexReg + 2, ones_digit);
+					break;
 				} else if (thirdNybble == 0x5) {
 					throw new UnsupportedOperationException("'store-reg-to-mem' not handled!");
 					// break;
