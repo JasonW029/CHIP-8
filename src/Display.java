@@ -57,12 +57,12 @@ public class Display extends JPanel {
         // draw columns from left to right
         for (int curr_col = 0; curr_col < SPRITE_WIDTH; ++curr_col) {
             // if sprite writes off-screen, do not wrap around - simply cut off the sprite
-            if (x + curr_col > SCREEN_WIDTH) {
+            if (x + curr_col >= SCREEN_WIDTH) {
                 break;
             }
            for (int curr_row = 0; curr_row < spriteHeight; ++curr_row) {
                // if sprite writes off-screen, do not wrap around - simply cut off the sprite
-               if (y + curr_row > SCREEN_HEIGHT) {
+               if (y + curr_row >= SCREEN_HEIGHT) {
                    break;
                }
                boolean spritePixel = ((spriteList[curr_row] >>> (SPRITE_WIDTH - curr_col - 1)) & 0b1) == 0b1;
