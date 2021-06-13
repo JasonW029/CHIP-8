@@ -8,14 +8,14 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		Chip8 chip8;
 		try {
-			chip8 = new Chip8(10);
+			chip8 = new Chip8(10, false);
 		} catch (InterruptedException | InvocationTargetException e) {
 			e.printStackTrace();
 			throw new Exception("Couldn't initialize CHIP-8.");
 		}
 
 		try {
-			chip8.loadProgram("Chip-8 Files/IBM Logo.ch8");
+			chip8.loadProgram("Chip-8 Files/PONG");
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new Exception("The specified file cannot be found.");

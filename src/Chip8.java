@@ -10,6 +10,7 @@ public class Chip8 {
 	byte[] RAM = new byte[0x1000];  // CHIP-8 has 4096 bytes of RAM
 	Processor cpu = new Processor();
 	Display display = new Display(10);
+	boolean usingModernImpl = false;
 	
 	byte[] fonts = new byte[]
     {
@@ -31,15 +32,16 @@ public class Chip8 {
     	(byte) 0xF0, (byte) 0x80, (byte) 0xF0, (byte) 0x80, (byte) 0x80  // F
 	};
 	
-	public Chip8(int scale) throws InterruptedException, InvocationTargetException {
-		initialize(scale);
+	public Chip8(int scale, boolean usingModernImpl) throws InterruptedException, InvocationTargetException {
+		initialize(scale, usingModernImpl);
 		setupFonts();
 	}
 	
-	private void initialize(int scale) throws InterruptedException, InvocationTargetException {
+	private void initialize(int scale, boolean usingModernImpl) throws InterruptedException, InvocationTargetException {
 		cpu.pc = 0x200;  // programs start at RAM addr 0x200
 		cpu.indexReg = 0;
 		cpu.stack = new Stack<>();
+		this.usingModernImpl = usingModernImpl;
 		// initialize display on the EDT
 		SwingUtilities.invokeAndWait( () -> display = new Display(scale) );
 	}
