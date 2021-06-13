@@ -9,7 +9,15 @@ public class Chip8Test {
 
     @BeforeEach
     public void setup() throws Exception {
-        chip8 = new Chip8(10);
+        chip8 = new Chip8(10, false);
+    }
+
+    @Test
+    public void test1NNN() {
+        // jump program counter to address 0xNNN
+        short opcode = 0x1AF6;
+        chip8.cpu.decode(chip8, opcode);
+        assertEquals(0xAF6, chip8.cpu.pc);
     }
 
     @Test
