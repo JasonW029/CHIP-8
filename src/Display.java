@@ -9,24 +9,12 @@ public class Display extends JPanel {
 
     int scale;
     boolean[][] screen;
-    final int SCREEN_WIDTH = 64;
-    final int SCREEN_HEIGHT = 32;
-    final int SPRITE_WIDTH = 8;
+    final static int SCREEN_WIDTH = 64;
+    final static int SCREEN_HEIGHT = 32;
+    final static int SPRITE_WIDTH = 8;
 
 
-    public static void main(String[] args) {
-        Display display = new Display(10);
-        boolean[][] screenCtx = new boolean[display.SCREEN_WIDTH][display.SCREEN_HEIGHT];
-        for (boolean[] row : screenCtx) {
-            Arrays.fill(row, true);
-        }
-        display.screen = screenCtx;
-        // display implicitly calls paintComponent
-        display.updateScreen();
-    }
-
-
-    public Display(int scale) {
+    public Display(int scale, Keyboard keyboard) {
         this.scale = scale;
 
         boolean[][] screen = new boolean[64][32];
@@ -39,6 +27,7 @@ public class Display extends JPanel {
 //        this.setSize(64 * this.scale, 32 * this.scale);
 
         JFrame frame = new JFrame("Test");
+        frame.addKeyListener(keyboard);
         frame.add(this);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        frame.setSize(64 * this.scale, 32 * this.scale);

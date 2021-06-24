@@ -14,6 +14,7 @@ public class Chip8 {
 	
 	byte[] fonts = new byte[]
     {
+	Keyboard keyboard = new Keyboard();
     	(byte) 0xF0, (byte) 0x90, (byte) 0x90, (byte) 0x90, (byte) 0xF0, // 0
     	(byte) 0x20, (byte) 0x60, (byte) 0x20, (byte) 0x20, (byte) 0x70, // 1
     	(byte) 0xF0, (byte) 0x10, (byte) 0xF0, (byte) 0x80, (byte) 0xF0, // 2
