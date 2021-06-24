@@ -8,22 +8,22 @@ public class Main {
 	public static void main(String[] args) throws Exception {
 		Chip8 chip8;
 		try {
-			chip8 = new Chip8(10, false);
+			chip8 = new Chip8(10, true);
 		} catch (InterruptedException | InvocationTargetException e) {
 			e.printStackTrace();
 			throw new Exception("Couldn't initialize CHIP-8.");
 		}
 
 		try {
-			chip8.loadProgram("Chip-8 Files/PONG");
+			chip8.loadProgram("CHIP-8 Files/TETRIS");
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new Exception("The specified file cannot be found.");
 		}
 
-		System.out.println(Arrays.toString(chip8.RAM));
-		for (int i = 0x200; i < chip8.RAM.length; i++) {
-			System.out.print(Integer.toHexString(chip8.RAM[i] & 0xFF) + ", ");
+		System.out.println(Arrays.toString(chip8.memory));
+		for (int i = 0x200; i < chip8.memory.length; i++) {
+			System.out.print(Integer.toHexString(chip8.memory[i] & 0xFF) + ", ");
 		}
 //		System.out.println();
 //		chip8.cpu.V[0] = (byte) 0b10000000;
@@ -51,4 +51,4 @@ public class Main {
 	}
 	
 
-};
+}

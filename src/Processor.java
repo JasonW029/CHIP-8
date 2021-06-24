@@ -1,28 +1,33 @@
 
 import javax.swing.*;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Random;
 import java.util.Stack;
 
 public class Processor {
-	
+
 	byte[] V = new byte[16];  // var registers 0 thru F
-	short indexReg;  // points at locations in RAM
+	short indexReg;  // points at locations in memory
 	short pc;  // program counter (points at current instruction)
 	Stack<Short> stack; // 16-item deep stack
 	byte delayTimer;
 	byte soundTimer;
 	Random rand = new Random();
-	
-	public Processor() {
-	}
-	
-	public short fetch(Chip8 chip8) {
-		// combine two 8-bit instructions to get a 16-bit opcode
-		short opcode = (short) ((chip8.getFromRAM(pc) << 8) & 0xffff | chip8.getFromRAM(pc + 1) & 0xff);
-		byte firstByte = chip8.getFromRAM(pc);
-		byte secondByte = chip8.getFromRAM(pc + 1);
-		pc += 2;
-		return opcode;
+	private Duration timerDeficit = Duration.ZERO; // represents how far behind we are to ticking at exactly 60 fps
+	private Duration instrDeficit = Duration.ZERO; // represents how far behind we are to executing opcodes at exactly
+												   // targetInstructionsPerSecond
+	private Instant lastTimerUpdate = Instant.now();
+	private Instant lastInstrUpdate = Instant.now();
+	private static final long NANOS_PER_TIMER_TICK = Duration.ofNanos(16666667).toNanos(); // nanos equiv. to 16.67ms
+	private final long nanosPerInstr;
+	private static final int ONE_MILLION = 1000000000;
+
+	public Processor(short initial_pc, int targetInstructionsPerSecond) {
+		this.pc = initial_pc;
+		this.indexReg = 0;
+		this.stack = new Stack<>();
+		this.nanosPerInstr = (long) (1.0/targetInstructionsPerSecond * ONE_MILLION);
 	}
 
 	public void printHexByte(byte b) {
@@ -47,28 +52,76 @@ public class Processor {
 		return (byte) ((b & 0b10000000) >>> 7);
 	}
 
-	public byte bitshiftRight(byte b) {
+	private byte bitshiftRight(byte b) {
 		int shifted_b = b >>> 1;
 		// the leading sign bit may not be accurate due to int widening, so we will force it to be 0
 		return (byte) (shifted_b & 0b01111111);
 	}
 
-	public byte bitshiftLeft(byte b) {
+	private byte bitshiftLeft(byte b) {
 		int shifted_b = b << 1;
 		return (byte) (shifted_b);
 	}
+
+	private void updateTimers() {
+		Instant now = Instant.now();
+		Duration timeSinceLastUpdate = Duration.between(this.lastTimerUpdate, now).plus(this.timerDeficit);
+		long nanosSinceLastUpdate = timeSinceLastUpdate.toNanos();
+		if (nanosSinceLastUpdate >= NANOS_PER_TIMER_TICK) {
+			int intDelayTimer = (delayTimer & 0xff);
+			int intSoundTimer = (soundTimer & 0xff);
+			if (intDelayTimer > 0) {
+				intDelayTimer -= 1;
+				this.delayTimer = (byte) intDelayTimer;
+			}
+			if (intSoundTimer > 0) {
+				intSoundTimer -= 1;
+				this.soundTimer = (byte) intSoundTimer;
+			}
+			this.timerDeficit = Duration.ofNanos(nanosSinceLastUpdate - NANOS_PER_TIMER_TICK);
+			this.lastTimerUpdate = now;
+		}
+	}
+
+	/**
+	 * Returns whether enough time has passed to allow another opcode to run. Limiting the number of opcodes allowed
+	 * to be executed every second fixes incredibly high speeds in games.
+	 * @return Whether enough time has passed to allow another opcode to run.
+	 */
+	private boolean shouldExecuteOpcode() {
+		Instant now = Instant.now();
+		Duration timeSinceLastUpdate = Duration.between(this.lastInstrUpdate, now).plus(this.instrDeficit);
+		long nanosSinceLastUpdate = timeSinceLastUpdate.toNanos();
+		if (nanosSinceLastUpdate >= nanosPerInstr) {
+			this.instrDeficit = Duration.ofNanos(nanosSinceLastUpdate - nanosPerInstr);
+			this.lastInstrUpdate = now;
+			return true;
+		}
+		return false;
+	}
+
+	public short fetch(Chip8 chip8) {
+		// combine two 8-bit instructions to get a 16-bit opcode
+		short opcode = (short) ((chip8.getFromMem(pc) << 8) & 0xffff | chip8.getFromMem(pc + 1) & 0xff);
+		return opcode;
+	}
 	
 	public void decode(Chip8 chip8, short opcode) {
-		printHexShort(opcode);
+		this.updateTimers();
+		if (!shouldExecuteOpcode()) {
+			return;
+		}
+		pc += 2;
+		// printHexShort(opcode);
 		// note: nthNybble variables are always unsigned because they only take up 4 bits (not 8)
 		byte firstNybble = (byte) ((opcode & 0xF000) >>> 12);
-		printHexByte(firstNybble);
+		// printHexByte(firstNybble);
 		byte secondNybble = (byte) ((opcode & 0x0F00) >>> 8);
-		printHexByte(secondNybble);
+		// printHexByte(secondNybble);
 		byte thirdNybble = (byte) ((opcode & 0x00F0) >>> 4);
-		printHexByte(thirdNybble);
+		// printHexByte(thirdNybble);
 		byte fourthNybble = (byte) (opcode & 0x000F);
-		printHexByte(fourthNybble);
+		// printHexByte(fourthNybble);
 		
 		// Note that any bitwise operation or boolean operation on bytes cause implicit widening
 		// into ints, so any bytes with a 1 in front will be carried into any inserted bits (so
@@ -109,12 +162,12 @@ public class Processor {
 						fourthNybble & 0x00f);
 				break;
 			case 0x3: // skip next instruction if VX == NN
-				if (V[secondNybble] == (short) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
+				if (V[secondNybble] == (byte) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
 					chip8.cpu.pc += 2;
 				}
 				break;
 			case 0x4: // skip next instruction if VX != NN
-				if (V[secondNybble] != (short) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
+				if (V[secondNybble] != (byte) ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f))) {
 					chip8.cpu.pc += 2;
 				}
 				break;
@@ -210,66 +263,110 @@ public class Processor {
 				int rand_num = rand.nextInt(255);
 				chip8.cpu.V[secondNybble] = (byte) (rand_num & ((thirdNybble << 4) & 0xf0 | (fourthNybble & 0x0f)));
 				break;
-			case 0xD: // draw-sprite
+			case 0xD: { // draw-sprite
 				chip8.cpu.V[0xF] = 0;
-				int x = (V[secondNybble] & 0xff) % chip8.display.SCREEN_WIDTH; // x-coord's start position wraps
-				int y = (V[thirdNybble] & 0xff) % chip8.display.SCREEN_HEIGHT; // y-coord's start position wraps
+				int x = (V[secondNybble] & 0xff) % Display.SCREEN_WIDTH; // x-coord's start position wraps
+				int y = (V[thirdNybble] & 0xff) % Display.SCREEN_HEIGHT; // y-coord's start position wraps
 				int spriteHeight = fourthNybble & 0xff;
 
 				byte[] spriteList = new byte[spriteHeight]; // holds all sprite to be written in row order
 				// fill spriteList with sprite data
 				for (int i = 0; i < spriteHeight; ++i) {
-					spriteList[i] = chip8.RAM[indexReg + i];
+					spriteList[i] = chip8.memory[indexReg + i];
 				}
 				// draw sprite to display
-				V[0xF] = (byte) (chip8.display.drawSprite(spriteList, x, y, spriteHeight) ? 1 : 0);
+				boolean bitTurnedOff = chip8.display.drawSprite(spriteList, x, y, spriteHeight);
+				V[0xF] = (byte) (bitTurnedOff ? 1 : 0);
 				break;
+			}
 			case 0xE:
-				if (thirdNybble == 0x9) {
-					throw new UnsupportedOperationException("'skip-key-pressed' not handled!");
-					// break;
-				} else if (thirdNybble == 0xA) {
-					throw new UnsupportedOperationException("'skip-key-not-pressed' not handled!");
-					// break;
+				if (thirdNybble == 0x9) { // skip next instruction if key corresponding to value in VX is pressed
+					int hostKeyTarget = chip8.keyboard.translateToHostKey(V[secondNybble]);
+					if (chip8.keyboard.keyState.get(hostKeyTarget) == Keyboard.KeyState.PRESSED) {
+						pc += 2;
+					}
+					break;
+				} else if (thirdNybble == 0xA) { // skip next instr if key corresponding to value in VX is NOT pressed
+					int hostKeyTarget = chip8.keyboard.translateToHostKey(V[secondNybble]);
+					if (chip8.keyboard.keyState.get(hostKeyTarget) == Keyboard.KeyState.NOT_PRESSED) {
+						pc += 2;
+					}
+					break;
 				}
 			case 0xF:
 				if (thirdNybble == 0x0) {
-					if (fourthNybble == 0x7) {
-						throw new UnsupportedOperationException("'set-reg-to-delay' not handled!");
-						// break;
-					} else if (fourthNybble == 0xA) {
-						throw new UnsupportedOperationException("'set-reg-key-blocking' not handled!");
-						// break;
+					if (fourthNybble == 0x7) { // set VX to the value of the delay timer
+						V[secondNybble] = delayTimer;
+						break;
+					} else if (fourthNybble == 0xA) { // Wait until a key is pressed, then store the key into VX
+						if (chip8.keyboard.currKey == null) {
+							// No key is being pressed, so block execution
+							pc -= 2;
+						} else {
+							byte guestKey = chip8.keyboard.translateToGuestKey(chip8.keyboard.currKey);
+							V[secondNybble] = guestKey;
+						}
+						break;
 					}
 				} else if (thirdNybble == 0x1) {
-					if (fourthNybble == 0x5) {
-						throw new UnsupportedOperationException("'set-delay-timer' not handled!");
-						// break;
-					} else if (fourthNybble == 0x8) {
-						throw new UnsupportedOperationException("'set-sound-timer' not handled!");
-						// break;
-					} else if (fourthNybble == 0xE) {
-						throw new UnsupportedOperationException("'add-reg-to-index-nocarry' not handled!");
-						// break;
+					if (fourthNybble == 0x5) { // set delay timer to value in VX
+						delayTimer = V[secondNybble];
+						break;
+					} else if (fourthNybble == 0x8) { // set sound timer to value in VX
+						soundTimer = V[secondNybble];
+						break;
+					} else if (fourthNybble == 0xE) { // set I to I + VX
+						// this opcode is weird, check for regressions
+						V[0xf] = 0;
+						int result = indexReg + (int) (V[secondNybble] & 0xff);
+						if (result > 0xfff) {
+							V[0xf] = 1;
+						}
+						indexReg = (short) result;
+						break;
 					}
-				} else if (thirdNybble == 0x2) {
-					throw new UnsupportedOperationException("'set-index-sprite' not handled!");
-					// break;
+				} else if (thirdNybble == 0x2) { // set I to the address of the hex character in VX
+					// note: the hex character in VX is found by the lowest 4 bits
+					byte hex_char = (byte) (V[secondNybble] & 0x0f);
+					indexReg = (short) (0x050 + (5 * hex_char)); // since there are 5 bytes per character
+					break;
 				} else if (thirdNybble == 0x3) { // load BCD into memory
 					int num = V[secondNybble] & 0xff;
 					byte hundreds_digit = (byte) (num / 100);
 					byte tens_digit = (byte) ((num / 10) % 10);
 					byte ones_digit = (byte) (num % 10);
-					chip8.setRAM(indexReg, hundreds_digit);
-					chip8.setRAM(indexReg + 1, tens_digit);
-					chip8.setRAM(indexReg + 2, ones_digit);
+					chip8.setMem(indexReg, hundreds_digit);
+					chip8.setMem(indexReg + 1, tens_digit);
+					chip8.setMem(indexReg + 2, ones_digit);
 					break;
-				} else if (thirdNybble == 0x5) {
-					throw new UnsupportedOperationException("'store-reg-to-mem' not handled!");
-					// break;
-				} else if (thirdNybble == 0x6) {
-					throw new UnsupportedOperationException("'fill-reg-from-mem' not handled!");
-					// break;
+				} else if (thirdNybble == 0x5) { // store register values to memory starting at I
+					// NOTE: this opcode would permanently alter the index register on the original COSMAC VIP,
+					// but not modern interpreters
+					if (chip8.usingModernImpl) {
+						for (int n = 0; n <= secondNybble; ++n) {
+							chip8.setMem(indexReg + n, V[n]);
+						}
+					} else {
+						for (int n = 0; n <= secondNybble; ++n) {
+							chip8.setMem(indexReg, V[n]);
+							++indexReg;
+						}
+					}
+					break;
+				} else if (thirdNybble == 0x6) { // load memory (starting at I) into registers
+					// NOTE: this opcode would permanently alter the index register on the original COSMAC VIP,
+					// but not modern interpreters
+					if (chip8.usingModernImpl) {
+						for (int n = 0; n <= secondNybble; ++n) {
+							V[n] = chip8.getFromMem(indexReg + n);
+						}
+					} else {
+						for (int n = 0; n <= secondNybble; ++n) {
+							V[n] = chip8.getFromMem(indexReg);
+							++indexReg;
+						}
+					}
+					break;
 				}
 			default:
 				throw new UnsupportedOperationException("Opcode " + Integer.toHexString((opcode & 0xffff)) + " not handled!");
