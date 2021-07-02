@@ -84,8 +84,8 @@ public class Processor {
 	}
 
 	/**
-	 * Returns whether enough time has passed to allow another opcode to run. Limiting the number of opcodes allowed
-	 * to be executed every second fixes incredibly high speeds in games.
+	 * Returns whether enough time has passed to allow another opcode to run.
+	 * Limiting the number of opcodes allowed to be executed every second fixes incredibly high speeds in games.
 	 * @return Whether enough time has passed to allow another opcode to run.
 	 */
 	private boolean shouldExecuteOpcode() {
@@ -265,7 +265,7 @@ public class Processor {
 				break;
 			case 0xD: { // draw-sprite
 				chip8.cpu.V[0xF] = 0;
-				int x = (V[secondNybble] & 0xff) % Display.SCREEN_WIDTH; // x-coord's start position wraps
+				int x = (V[secondNybble] & 0xff) % Display.SCREEN_LENGTH; // x-coord's start position wraps
 				int y = (V[thirdNybble] & 0xff) % Display.SCREEN_HEIGHT; // y-coord's start position wraps
 				int spriteHeight = fourthNybble & 0xff;
 

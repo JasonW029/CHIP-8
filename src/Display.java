@@ -9,7 +9,7 @@ public class Display extends JPanel {
 
     int scale;
     boolean[][] screen;
-    final static int SCREEN_WIDTH = 64;
+    final static int SCREEN_LENGTH = 64;
     final static int SCREEN_HEIGHT = 32;
     final static int SPRITE_WIDTH = 8;
 
@@ -46,7 +46,7 @@ public class Display extends JPanel {
         // draw columns from left to right
         for (int curr_col = 0; curr_col < SPRITE_WIDTH; ++curr_col) {
             // if sprite writes off-screen, do not wrap around - simply cut off the sprite
-            if (x + curr_col >= SCREEN_WIDTH) {
+            if (x + curr_col >= SCREEN_LENGTH) {
                 break;
             }
            for (int curr_row = 0; curr_row < spriteHeight; ++curr_row) {
