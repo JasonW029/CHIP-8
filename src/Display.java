@@ -9,26 +9,25 @@ public class Display extends JPanel {
 
     int scale;
     boolean[][] screen;
-
-    public static void main(String[] args) {
-        boolean[][] screenCtx = new boolean[64][32];
-        for (boolean[] row : screenCtx) {
-            Arrays.fill(row, true);
-        }
-        Display display = new Display(10, screenCtx);
-        // display implicitly calls paintComponent
-        display.resetScreen();
-    }
+    final static int SCREEN_LENGTH = 64;
+    final static int SCREEN_HEIGHT = 32;
+    final static int SPRITE_WIDTH = 8;
 
 
-    public Display(int scale, boolean[][] screen) {
+    public Display(int scale, Keyboard keyboard) {
         this.scale = scale;
+
+        boolean[][] screen = new boolean[64][32];
+        for (boolean[] row : screen) {
+            Arrays.fill(row, false);
+        }
         this.screen = screen;
 
         this.setPreferredSize(new Dimension(64 * this.scale, 32 * this.scale));
 //        this.setSize(64 * this.scale, 32 * this.scale);
 
         JFrame frame = new JFrame("Test");
+        frame.addKeyListener(keyboard);
         frame.add(this);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        frame.setSize(64 * this.scale, 32 * this.scale);
@@ -37,21 +36,52 @@ public class Display extends JPanel {
         frame.setVisible(true);
     }
 
+    /**
+     * Draw an 8xspriteHeight large sprite starting at the specified x and y coordinates.
+     * @return Return whether any pixels were turned off.
+     */
+    public boolean drawSprite(byte[] spriteList, int x, int y, int spriteHeight) {
+        boolean anyPixelsTurnedOff = false;
+
+        // draw columns from left to right
+        for (int curr_col = 0; curr_col < SPRITE_WIDTH; ++curr_col) {
+            // if sprite writes off-screen, do not wrap around - simply cut off the sprite
+            if (x + curr_col >= SCREEN_LENGTH) {
+                break;
+            }
+           for (int curr_row = 0; curr_row < spriteHeight; ++curr_row) {
+               // if sprite writes off-screen, do not wrap around - simply cut off the sprite
+               if (y + curr_row >= SCREEN_HEIGHT) {
+                   break;
+               }
+               boolean spritePixel = ((spriteList[curr_row] >>> (SPRITE_WIDTH - curr_col - 1)) & 0b1) == 0b1;
+               // if spritePixel is 1 and the screen pixel is on, the screen pixel turns off
+               if (!anyPixelsTurnedOff && screen[x + curr_col][y + curr_row] && spritePixel) {
+                   anyPixelsTurnedOff = true;
+               }
+               screen[x + curr_col][y + curr_row] ^= spritePixel;
+           }
+        }
+        updateScreen();
+        return anyPixelsTurnedOff;
+    } // drawSprite()
+
     public void flipPixel(int x, int y) {
         this.screen[x][y] = !this.screen[x][y];
-        resetScreen();
+        updateScreen();
     }
 
-    public void resetScreen() {
-        // g.clearRect(64 * this.scale, 32 * this.scale, 64 * this.scale, 32 * this.scale);
-        this.removeAll();
-
-        boolean[][] screenCtx = new boolean[64][32];
-        for (boolean[] row : screenCtx) {
+    public void clearScreen() {
+        boolean[][] screen = new boolean[64][32];
+        for (boolean[] row : screen) {
             Arrays.fill(row, false);
         }
+        this.screen = screen;
+        updateScreen();
+    }
 
-        this.screen = screenCtx;
+    public void updateScreen() {
+        this.removeAll();
 
         this.revalidate();
         this.repaint();
