@@ -4,12 +4,12 @@ import java.util.HashMap;
 
 public class Keyboard extends KeyAdapter {
 
-    public enum KeyState {
+    private enum KeyState {
         PRESSED,
         NOT_PRESSED
     }
 
-    HashMap<Integer, KeyState> keyState = new HashMap<>();
+    private final HashMap<Integer, KeyState> keyState = new HashMap<>();
     // Maps guest keys (emulated keys) to host keys (keyboard keys)
     private final HashMap<Byte, Integer> guestToHostKey = new HashMap<>();
     // Maps host keys (keyboard keys) to guest keys (emulated keys)
@@ -46,6 +46,25 @@ public class Keyboard extends KeyAdapter {
 
     public Byte translateToGuestKey(Integer hostKey) {
         return hostToGuestKey.get(hostKey);
+    }
+
+    public boolean anyKeyBeingPressed() {
+        return currKey != null;
+    }
+
+    public boolean guestKeyBeingPressed(Byte guestKey) {
+        if (guestKey == null) {
+            return false;
+        }
+        int hostKeyTarget = translateToHostKey(guestKey);
+        return keyState.get(hostKeyTarget) == Keyboard.KeyState.PRESSED;
+    }
+
+    public boolean hostKeyBeingPressed(Integer hostKey) {
+        if (hostKey == null) {
+            return false;
+        }
+        return keyState.get(hostKey) == Keyboard.KeyState.PRESSED;
     }
 
     private boolean validKeyPressed(int keyPressed) {

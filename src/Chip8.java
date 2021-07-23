@@ -31,6 +31,7 @@ public class Chip8 {
     	(byte) 0xF0, (byte) 0x80, (byte) 0xF0, (byte) 0x80, (byte) 0x80  // F
 	};
 	final static short GAME_LOAD_ADDR = 0x200; // programs start at memory addr 0x200
+	final static short FONTS_LOAD_ADDR = 0x050; // fonts are stored starting at memory addr 0x050
 	
 	public Chip8(int scale, boolean usingModernImpl) throws InterruptedException, InvocationTargetException {
 		// setup CPU
@@ -44,7 +45,8 @@ public class Chip8 {
 	}
 	
 	private void setupFonts() {
-		for (short memAddr = 0x050, fontIndex = 0; memAddr <= 0x09F && fontIndex < FONTS.length; memAddr++, fontIndex++) {
+		for (short memAddr = FONTS_LOAD_ADDR, fontIndex = 0; memAddr <= 0x09F && fontIndex < FONTS.length;
+			 memAddr++, fontIndex++) {
 			setMem(memAddr, FONTS[fontIndex]);
 		}
 	}
@@ -53,7 +55,7 @@ public class Chip8 {
 		File program = new File(filepath);
 		byte[] programBytes = Files.readAllBytes(program.toPath());
 		for (int i = 0; i < programBytes.length; i++) {
-			setMem(i + 0x200, programBytes[i]);
+			setMem(i + GAME_LOAD_ADDR, programBytes[i]);
 		}
 	}
 	
