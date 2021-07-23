@@ -13,7 +13,7 @@ public class Processor {
 	Stack<Short> stack; // 16-item deep stack
 	byte delayTimer;
 	byte soundTimer;
-	Random rand = new Random();
+	private final Random rand = new Random();
 	private Duration timerDeficit = Duration.ZERO; // represents how far behind we are to ticking at exactly 60 fps
 	private Duration instrDeficit = Duration.ZERO; // represents how far behind we are to executing opcodes at exactly
 												   // targetInstructionsPerSecond
@@ -67,25 +67,29 @@ public class Processor {
 		Instant now = Instant.now();
 		Duration timeSinceLastUpdate = Duration.between(this.lastTimerUpdate, now).plus(this.timerDeficit);
 		long nanosSinceLastUpdate = timeSinceLastUpdate.toNanos();
-		if (nanosSinceLastUpdate >= NANOS_PER_TIMER_TICK) {
-			int intDelayTimer = (delayTimer & 0xff);
-			int intSoundTimer = (soundTimer & 0xff);
-			if (intDelayTimer > 0) {
-				intDelayTimer -= 1;
-				this.delayTimer = (byte) intDelayTimer;
-			}
-			if (intSoundTimer > 0) {
-				intSoundTimer -= 1;
-				this.soundTimer = (byte) intSoundTimer;
-			}
-			this.timerDeficit = Duration.ofNanos(nanosSinceLastUpdate - NANOS_PER_TIMER_TICK);
-			this.lastTimerUpdate = now;
+
+		if (nanosSinceLastUpdate < NANOS_PER_TIMER_TICK) {
+			// Not enough time has passed so no timers should be ticked
+			return;
 		}
+
+		int intDelayTimer = (delayTimer & 0xff);
+		int intSoundTimer = (soundTimer & 0xff);
+		if (intDelayTimer > 0) {
+			intDelayTimer -= 1;
+			this.delayTimer = (byte) intDelayTimer;
+		}
+		if (intSoundTimer > 0) {
+			intSoundTimer -= 1;
+			this.soundTimer = (byte) intSoundTimer;
+		}
+		this.timerDeficit = Duration.ofNanos(nanosSinceLastUpdate - NANOS_PER_TIMER_TICK);
+		this.lastTimerUpdate = now;
 	}
 
 	/**
 	 * Returns whether enough time has passed to allow another opcode to run.
-	 * Limiting the number of opcodes allowed to be executed every second fixes incredibly high speeds in games.
+	 * Limiting the number of opcodes allowed to execute every second fixes incredibly high speeds in games.
 	 * @return Whether enough time has passed to allow another opcode to run.
 	 */
 	private boolean shouldExecuteOpcode() {
@@ -281,14 +285,12 @@ public class Processor {
 			}
 			case 0xE:
 				if (thirdNybble == 0x9) { // skip next instruction if key corresponding to value in VX is pressed
-					int hostKeyTarget = chip8.keyboard.translateToHostKey(V[secondNybble]);
-					if (chip8.keyboard.keyState.get(hostKeyTarget) == Keyboard.KeyState.PRESSED) {
+					if (chip8.keyboard.guestKeyBeingPressed(V[secondNybble])) {
 						pc += 2;
 					}
 					break;
 				} else if (thirdNybble == 0xA) { // skip next instr if key corresponding to value in VX is NOT pressed
-					int hostKeyTarget = chip8.keyboard.translateToHostKey(V[secondNybble]);
-					if (chip8.keyboard.keyState.get(hostKeyTarget) == Keyboard.KeyState.NOT_PRESSED) {
+					if (!chip8.keyboard.guestKeyBeingPressed(V[secondNybble])) {
 						pc += 2;
 					}
 					break;
@@ -299,7 +301,7 @@ public class Processor {
 						V[secondNybble] = delayTimer;
 						break;
 					} else if (fourthNybble == 0xA) { // Wait until a key is pressed, then store the key into VX
-						if (chip8.keyboard.currKey == null) {
+						if (!chip8.keyboard.anyKeyBeingPressed()) {
 							// No key is being pressed, so block execution
 							pc -= 2;
 						} else {
