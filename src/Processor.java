@@ -7,16 +7,17 @@ import java.util.Stack;
 
 public class Processor {
 
-	byte[] V = new byte[16];  // var registers 0 thru F
-	short indexReg;  // points at locations in memory
+	byte[] V = new byte[16];  // 8-bit variable registers 0 through F
+	short indexReg;  // index register; points at locations in memory
 	short pc;  // program counter (points at current instruction)
-	Stack<Short> stack; // 16-item deep stack
+	Stack<Short> stack; // 16-item deep stack; stores memory addresses for returns
 	byte delayTimer;
 	byte soundTimer;
 	private final Random rand = new Random();
-	private Duration timerDeficit = Duration.ZERO; // represents how far behind we are to ticking at exactly 60 fps
-	private Duration instrDeficit = Duration.ZERO; // represents how far behind we are to executing opcodes at exactly
-												   // targetInstructionsPerSecond
+	private Duration timerDeficit = Duration.ZERO; // stores how far behind we are to ticking at exactly 60Hz
+												   // (for timers)
+	private Duration instrDeficit = Duration.ZERO; // stores how far behind we are to executing opcodes at exactly
+												   // targetInstructionsPerSecond (for opcode execution speed)
 	private Instant lastTimerUpdate = Instant.now();
 	private Instant lastInstrUpdate = Instant.now();
 	private static final long NANOS_PER_TIMER_TICK = Duration.ofNanos(16666667).toNanos(); // nanos equiv. to 16.67ms
